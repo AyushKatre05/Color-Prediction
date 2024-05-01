@@ -9,7 +9,7 @@ st.title("Color Detector")
 def colorName(R, G, B):
     min_dist = 10000
     for i in range(len(ds)):
-        d = abs(R - int(ds.loc[i, "R"])) + abs(G - int(ds.loc[i, "G"])) + abs(B - int(ds.loc[i, "B"]))
+        d = abs(R - int(ds.loc[i, "R"])) + abs(G - int(ds.loc[i, "G"]))) + abs(B - int(ds.loc[i, "B"])))
         if d <= min_dist:
             min_dist = d
             cname = ds.loc[i, 'color_name']
@@ -27,6 +27,10 @@ if uploaded_file is not None:
     img_draw = ImageDraw.Draw(image)
 
     st.image(image, caption='Uploaded Image')
+
+    # Process image when double-clicked
+    if st._is_running_with_streamlit:
+        st.write("Double-click on the image to detect color")
 
     clicked = False
 
@@ -50,9 +54,8 @@ if uploaded_file is not None:
 
     while True:
         # Click event handling
-        if st.button("Double-click on the image to detect color"):
-            click_pos = st.experimental_get_query_params().get("position")
-            if click_pos:
-                x, y = map(int, click_pos[0].split(","))
-                draw_fun(x, y)
-                st.image(image, caption='Detected Color')
+        click_pos = st.experimental_get_query_params().get("position")
+        if click_pos:
+            x, y = map(int, click_pos[0].split(","))
+            draw_fun(x, y)
+            st.image(image, caption='Detected Color')
