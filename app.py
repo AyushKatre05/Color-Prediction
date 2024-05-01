@@ -1,61 +1,72 @@
-import streamlit as st
+import cv2
 import numpy as np
 import pandas as pd
-from PIL import Image, ImageDraw
+import argparse
 
-st.title("Color Detector")
+#Creating argument parser to take image path from command line
+ap = argparse.ArgumentParser()
+ap.add_argument('-i', '--image', required=True, help="Image Path")
+args = vars(ap.parse_args())
+img_path = args['image']
 
-# Function to get color name
-def colorName(R, G, B):
-    min_dist = 10000
-    for i in range(len(ds)):
-        d = abs(R - int(ds.loc[i, "R"])) + abs(G - int(ds.loc[i, "G"])) + abs(B - int(ds.loc[i, "B"]))
-        if d <= min_dist:
-            min_dist = d
-            cname = ds.loc[i, 'color_name']
+#Reading the image with opencv
+img = cv2.imread(img_path)
+
+#declaring global variables (are used later on)
+clicked = False
+r = g = b = xpos = ypos = 0
+
+#Reading csv file with pandas and giving names to each column
+index=["color","color_name","hex","R","G","B"]
+csv = pd.read_csv('colors.csv', names=index, header=None)
+
+#function to calculate minimum distance from all colors and get the most matching color
+def getColorName(R,G,B):
+    minimum = 10000
+    for i in range(len(csv)):
+        d = abs(R- int(csv.loc[i,"R"])) + abs(G- int(csv.loc[i,"G"]))+ abs(B- int(csv.loc[i,"B"]))
+        if(d<=minimum):
+            minimum = d
+            cname = csv.loc[i,"color_name"]
     return cname
 
-# Read colors data
-index = ["color", "color_name", "hex", "R", "G", "B"]
-ds = pd.read_csv('colors.csv', names=index, header=None)
-
-# Load image
-uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
-if uploaded_file is not None:
-    # Convert uploaded file to PIL image
-    image = Image.open(uploaded_file)
-    img_draw = ImageDraw.Draw(image)
-
-    st.image(image, caption='Uploaded Image')
-
-    clicked = False
-
-    # Mouse event callback function
-    def draw_fun(x, y):
-        global clicked
-        global img_draw
-        global image
-        
+#function to get x,y coordinates of mouse double click
+def draw_function(event, x,y,flags,param):
+    if event == cv2.EVENT_LBUTTONDBLCLK:
+        global b,g,r,xpos,ypos, clicked
         clicked = True
-        b, g, r = image.getpixel((x, y))
+        xpos = x
+        ypos = y
+        b,g,r = img[y,x]
         b = int(b)
         g = int(g)
         r = int(r)
+       
+cv2.namedWindow('image')
+cv2.setMouseCallback('image',draw_function)
 
-        img_draw.rectangle([10, 10, 250, 60], fill=(b, g, r))
-        text = colorName(r, g, b) + ' R =' + str(r) + ' G= ' + str(g) + ' B= ' + str(b)
-        img_draw.text((50, 50), text, fill=(255, 255, 255))
-        if r + g + b >= 600:
-            img_draw.text((50, 50), text, fill=(0, 0, 0))
+while(1):
 
-    # Process image when double-clicked
-    if st._is_running_with_streamlit:
-        st.write("Double-click on the image to detect color")
+    cv2.imshow("image",img)
+    if (clicked):
+   
+        #cv2.rectangle(image, startpoint, endpoint, color, thickness)-1 fills entire rectangle 
+        cv2.rectangle(img,(20,20), (750,60), (b,g,r), -1)
 
-    while True:
-        # Click event handling
-        click_pos = st.experimental_get_query_params().get("position")
-        if click_pos:
-            x, y = map(int, click_pos[0].split(","))
-            draw_fun(x, y)
-            st.image(image, caption='Detected Color')
+        #Creating text string to display( Color name and RGB values )
+        text = getColorName(r,g,b) + ' R='+ str(r) +  ' G='+ str(g) +  ' B='+ str(b)
+        
+        #cv2.putText(img,text,start,font(0-7),fontScale,color,thickness,lineType )
+        cv2.putText(img, text,(50,50),2,0.8,(255,255,255),2,cv2.LINE_AA)
+
+        #For very light colours we will display text in black colour
+        if(r+g+b>=600):
+            cv2.putText(img, text,(50,50),2,0.8,(0,0,0),2,cv2.LINE_AA)
+            
+        clicked=False
+
+    #Break the loop when user hits 'esc' key    
+    if cv2.waitKey(20) & 0xFF ==27:
+        break
+    
+cv2.destroyAllWindows()
