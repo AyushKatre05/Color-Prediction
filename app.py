@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import cv2
+from PIL import Image, ImageDraw
 
 st.title("Color Detector")
 
@@ -22,34 +22,40 @@ ds = pd.read_csv('colors.csv', names=index, header=None)
 # Load image
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 if uploaded_file is not None:
-    img = cv2.imdecode(np.fromstring(uploaded_file.read(), np.uint8), 1)
-    st.image(img, channels="BGR", caption='Uploaded Image')
+    # Convert uploaded file to PIL image
+    image = Image.open(uploaded_file)
+    img_draw = ImageDraw.Draw(image)
+
+    st.image(image, caption='Uploaded Image')
+
     clicked = False
 
     # Mouse event callback function
-    def draw_fun(event, x, y, flags, param):
-        global b, g, r, xpos, ypos, clicked
-        if event == cv2.EVENT_LBUTTONDBLCLK:
-            clicked = True
-            xpos = x
-            ypos = y
-            b, g, r = img[y, x]
-            b = int(b)
-            g = int(g)
-            r = int(r)
+    def draw_fun(x, y):
+        global clicked
+        global img_draw
+        global image
+        
+        clicked = True
+        b, g, r = image.getpixel((x, y))
+        b = int(b)
+        g = int(g)
+        r = int(r)
 
-    cv2.namedWindow('Color Detect')
-    cv2.setMouseCallback('Color Detect', draw_fun)
+        img_draw.rectangle([10, 10, 250, 60], fill=(b, g, r))
+        text = colorName(r, g, b) + ' R =' + str(r) + ' G= ' + str(g) + ' B= ' + str(b)
+        img_draw.text((50, 50), text, fill=(255, 255, 255))
+        if r + g + b >= 600:
+            img_draw.text((50, 50), text, fill=(0, 0, 0))
+
+    # Process image when double-clicked
+    if st._is_running_with_streamlit:
+        st.write("Double-click on the image to detect color")
 
     while True:
-        cv2.imshow('Color Detect', img)
-        if clicked:
-            cv2.rectangle(img, (10, 10), (250, 60), (b, g, r), -1)
-            text = colorName(r, g, b) + ' R =' + str(r) + ' G= ' + str(g) + ' B= ' + str(b)
-            cv2.putText(img, text, (50, 50), 2, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
-            if r + g + b >= 600:
-                cv2.putText(img, text, (50, 50), 2, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
-            clicked = False
-        if cv2.waitKey(20) & 0xFF == 27:
-            break
-    cv2.destroyAllWindows()
+        # Click event handling
+        click_pos = st.experimental_get_query_params().get("position")
+        if click_pos:
+            x, y = map(int, click_pos[0].split(","))
+            draw_fun(x, y)
+            st.image(image, caption='Detected Color')
