@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-from PIL import Image
+from PIL import Image, ImageDraw
 
 st.title("Color Detector")
 
@@ -24,15 +24,35 @@ uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png
 if uploaded_file is not None:
     # Convert uploaded file to PIL image
     image = Image.open(uploaded_file)
+    img_draw = ImageDraw.Draw(image)
 
     st.image(image, caption='Uploaded Image')
 
-    # Process image pixel by pixel to get color information
-    img_array = np.array(image)
-    height, width, _ = img_array.shape
+    clicked = False
 
-    for y in range(height):
-        for x in range(width):
-            R, G, B = img_array[y, x]
-            color = colorName(R, G, B)
-            st.text(f"Pixel at ({x}, {y}): {color} (R={R}, G={G}, B={B})")
+    # Mouse event callback function
+    def draw_fun(x, y):
+        global clicked
+        global img_draw
+        global image
+        
+        clicked = True
+        b, g, r = image.getpixel((x, y))
+        b = int(b)
+        g = int(g)
+        r = int(r)
+
+        img_draw.rectangle([10, 10, 250, 60], fill=(b, g, r))
+        text = colorName(r, g, b) + ' R =' + str(r) + ' G= ' + str(g) + ' B= ' + str(b)
+        img_draw.text((50, 50), text, fill=(255, 255, 255))
+        if r + g + b >= 600:
+            img_draw.text((50, 50), text, fill=(0, 0, 0))
+
+    while True:
+        # Click event handling
+        if st.button("Double-click on the image to detect color"):
+            click_pos = st.experimental_get_query_params().get("position")
+            if click_pos:
+                x, y = map(int, click_pos[0].split(","))
+                draw_fun(x, y)
+                st.image(image, caption='Detected Color')
