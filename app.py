@@ -22,8 +22,11 @@ ds = pd.read_csv('colors.csv', names=index, header=None)
 # Load image
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 if uploaded_file is not None:
-    img = cv2.imdecode(np.fromstring(uploaded_file.read(), np.uint8), 1)
+    # Convert uploaded file to OpenCV image
+    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
+    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
     st.image(img, channels="BGR", caption='Uploaded Image')
+
     clicked = False
 
     # Mouse event callback function
