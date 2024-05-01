@@ -1,7 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import cv2
+from PIL import Image
 
 st.title("Color Detector")
 
@@ -22,37 +22,17 @@ ds = pd.read_csv('colors.csv', names=index, header=None)
 # Load image
 uploaded_file = st.file_uploader("Choose an image...", type=["jpg", "jpeg", "png"])
 if uploaded_file is not None:
-    # Convert uploaded file to OpenCV image
-    file_bytes = np.asarray(bytearray(uploaded_file.read()), dtype=np.uint8)
-    img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-    st.image(img, channels="BGR", caption='Uploaded Image')
+    # Convert uploaded file to PIL image
+    image = Image.open(uploaded_file)
 
-    clicked = False
+    st.image(image, caption='Uploaded Image')
 
-    # Mouse event callback function
-    def draw_fun(event, x, y, flags, param):
-        global b, g, r, xpos, ypos, clicked
-        if event == cv2.EVENT_LBUTTONDBLCLK:
-            clicked = True
-            xpos = x
-            ypos = y
-            b, g, r = img[y, x]
-            b = int(b)
-            g = int(g)
-            r = int(r)
+    # Process image pixel by pixel to get color information
+    img_array = np.array(image)
+    height, width, _ = img_array.shape
 
-    cv2.namedWindow('Color Detect')
-    cv2.setMouseCallback('Color Detect', draw_fun)
-
-    while True:
-        cv2.imshow('Color Detect', img)
-        if clicked:
-            cv2.rectangle(img, (10, 10), (250, 60), (b, g, r), -1)
-            text = colorName(r, g, b) + ' R =' + str(r) + ' G= ' + str(g) + ' B= ' + str(b)
-            cv2.putText(img, text, (50, 50), 2, 0.8, (255, 255, 255), 2, cv2.LINE_AA)
-            if r + g + b >= 600:
-                cv2.putText(img, text, (50, 50), 2, 0.8, (0, 0, 0), 2, cv2.LINE_AA)
-            clicked = False
-        if cv2.waitKey(20) & 0xFF == 27:
-            break
-    cv2.destroyAllWindows()
+    for y in range(height):
+        for x in range(width):
+            R, G, B = img_array[y, x]
+            color = colorName(R, G, B)
+            st.text(f"Pixel at ({x}, {y}): {color} (R={R}, G={G}, B={B})")
