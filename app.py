@@ -9,7 +9,7 @@ st.title("Color Detector")
 def colorName(R, G, B):
     min_dist = 10000
     for i in range(len(ds)):
-        d = abs(R - int(ds.loc[i, "R"])) + abs(G - int(ds.loc[i, "G"]))) + abs(B - int(ds.loc[i, "B"])))
+        d = abs(R - int(ds.loc[i, "R"])) + abs(G - int(ds.loc[i, "G"])) + abs(B - int(ds.loc[i, "B"]))
         if d <= min_dist:
             min_dist = d
             cname = ds.loc[i, 'color_name']
