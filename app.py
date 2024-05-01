@@ -28,10 +28,6 @@ if uploaded_file is not None:
 
     st.image(image, caption='Uploaded Image')
 
-    # Process image when double-clicked
-    if st._is_running_with_streamlit:
-        st.write("Double-click on the image to detect color")
-
     clicked = False
 
     # Mouse event callback function
@@ -51,6 +47,10 @@ if uploaded_file is not None:
         img_draw.text((50, 50), text, fill=(255, 255, 255))
         if r + g + b >= 600:
             img_draw.text((50, 50), text, fill=(0, 0, 0))
+
+    # Process image when double-clicked
+    if st._is_running_with_streamlit:
+        st.write("Double-click on the image to detect color")
 
     while True:
         # Click event handling
