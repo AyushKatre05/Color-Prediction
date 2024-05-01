@@ -1,4 +1,4 @@
 streamlit
 pandas
 numpy
-opencv-python-headless
+Pillow==8.4.0
